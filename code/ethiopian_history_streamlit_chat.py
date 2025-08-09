@@ -264,7 +264,7 @@ elif st.session_state.nav_page == "nav-mode":
         card_class = "persona-card selected" if selected else "persona-card"
         if st.button(f"{p['name']}", key=f"persona_{idx}"):
             st.session_state.selected_persona = idx
-            st.experimental_rerun()
+            st.rerun()
         st.markdown(f"""
         <div class='{card_class}'>
             <div class='persona-title'>{p['name']}</div>
@@ -284,3 +284,6 @@ st.markdown("""
 }
 </style>
 """, unsafe_allow_html=True)
+
+if "selected_persona" not in st.session_state:
+    st.session_state.selected_persona = 0 
