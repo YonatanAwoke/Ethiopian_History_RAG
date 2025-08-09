@@ -1,11 +1,14 @@
 import os
 import logging
+import sys
 from dotenv import load_dotenv
 from utils import load_yaml_config
 from prompt_builder import build_prompt_from_config
 from langchain_groq import ChatGroq
 from paths import APP_CONFIG_FPATH, PROMPT_CONFIG_FPATH, OUTPUTS_DIR
 from sentence_transformers import SentenceTransformer
+import pysqlite3
+sys.modules['sqlite3'] = sys.modules.pop('pysqlite3')
 import chromadb
 from chromadb.config import Settings
 from collections import deque
