@@ -1,0 +1,11 @@
+langchain~=0.3.25
+langchain_groq~=0.3.2
+langchain_huggingface~=0.2.0
+langchain_community~=0.3.24
+python-dotenv~=1.1.0
+pyyaml~=6.0.2
+chromadb~=1.0.12
+chroma-hnswlib~=0.7.6
+tiktoken~=0.9.0
+sentence-transformers~=4.1.0
+streamlit

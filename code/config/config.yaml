@@ -1,0 +1,34 @@
+llm: "llama-3.1-8b-instant"
+
+vectordb:
+  threshold: 15
+  n_results: 5
+
+memory_strategies:
+  trimming_window_size: 6 # Number of messages to keep in trimming strategy (6 would be 3 pairs of Q/A)
+  summarization_max_tokens: 1000 # Max tokens before summarization kicks in
+
+reasoning_strategies:
+  CoT: |
+    Use this systematic approach to provide your response:
+    1. Break down the question into smaller, easy-to-understand steps.
+    2. Explain each step simply, using examples or stories if possible.
+    3. Show your reasoning for each step in a way a child can follow.
+    4. Then provide your final answer in a friendly, encouraging way.
+
+  ReAct: |
+    Use this systematic approach to provide your response:
+    1. Thought: What fun or simple ways could I use to explain this?
+    2. Action: Choose and share the best story, analogy, or example.
+    3. Observation: What did we learn together?
+    4. Reflection: Is there a way to make this even more fun or clear for kids?
+
+    (Repeat steps 1–4 as needed)
+
+    Then provide your final answer in a kid-friendly way.
+
+  Self-Ask: |
+    Use this systematic approach to provide your response:
+    1. Break the main question into smaller, simple sub-questions.
+    2. Answer each sub-question in a way a child can understand.
+    3. Then, based on those answers, give a clear and friendly final response.
