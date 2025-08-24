@@ -173,11 +173,64 @@ if __name__ == "__main__":
     vectordb_params = app_config["vectordb"]
     llm = app_config["llm"]
 
+
+    def print_all_ids_and_metadata():
+        print("\nAll stored chunk IDs and metadata:")
+        results = collection.get(include=["metadatas"])
+        for i, doc_id in enumerate(results["ids"]):
+            meta = results["metadatas"][i]
+            print(f"ID: {doc_id}, Title: {meta.get('title')}, URL: {meta.get('fullurl')}")
+
+    def evaluate_retrieval(test_queries, k=5, threshold=0.3, match_on="id"):
+        """
+        Evaluate retrieval using recall@k and precision@k.
+        test_queries: list of dicts with 'query' and 'relevant_values' fields
+        match_on: 'id', 'title', or 'fullurl'
+        """
+        total_recall = 0
+        total_precision = 0
+        for test in test_queries:
+            query = test['query']
+            relevant_values = set(test['relevant_values'])
+            if match_on == "id":
+                results = collection.query(
+                    query_embeddings=[embedding_model.encode([query])[0].tolist()],
+                    n_results=k
+                )
+            else:
+                results = collection.query(
+                    query_embeddings=[embedding_model.encode([query])[0].tolist()],
+                    n_results=k,
+                    include=["metadatas"]
+                )
+            if match_on == "id":
+                retrieved = set(results["ids"][0])
+            else:
+                retrieved = set(meta.get(match_on) for meta in results["metadatas"][0])
+            true_positives = len(retrieved & relevant_values)
+            recall = true_positives / len(relevant_values) if relevant_values else 0
+            precision = true_positives / k if k else 0
+            print(f"Query: {query}")
+            print(f"Recall@{k}: {recall:.2f}, Precision@{k}: {precision:.2f}")
+            total_recall += recall
+            total_precision += precision
+        n = len(test_queries)
+        print(f"\nAverage Recall@{k}: {total_recall/n:.2f}")
+        print(f"Average Precision@{k}: {total_precision/n:.2f}")
+
+    # Example test set (replace with real data and correct match_on):
+    test_queries = [
+        {"query": "Battle of Adwa", "relevant_values": ["Battle of Adwa", "https://en.wikipedia.org/wiki/Battle_of_Adwa"]},
+        {"query": "Haile Selassie", "relevant_values": ["Haile Selassie", "https://en.wikipedia.org/wiki/Haile_Selassie"]},
+        # Add more test cases as needed
+    ]
+
     exit_app = False
     rude_words = ["stupid", "idiot", "hate", "dumb", "kill", "shut up", "ugly", "fool", "suck", "darn", "hate you", "hate this", "dumbest", "worst"]
     while not exit_app:
+
         query = input(
-            "Enter a question, 'config' to change the parameters, or 'exit' to quit: "
+            "Enter a question, 'config' to change the parameters, 'eval' to run retrieval evaluation, 'printids' to list all stored IDs/metadata, or 'exit' to quit: "
         )
         if query == "exit":
             exit_app = True
@@ -190,6 +243,19 @@ if __name__ == "__main__":
                 "threshold": threshold,
                 "n_results": n_results,
             }
+            continue
+
+        elif query == "printids":
+            print_all_ids_and_metadata()
+            continue
+
+        elif query == "eval":
+            k = int(input("Enter k for recall@k and precision@k: "))
+            match_on = input("Match on which field? (id/title/fullurl): ").strip().lower()
+            if match_on not in ("id", "title", "fullurl"):
+                print("Invalid match_on. Using 'id'.")
+                match_on = "id"
+            evaluate_retrieval(test_queries, k=k, threshold=vectordb_params.get("threshold", 0.3), match_on=match_on)
             continue
 
         # Kid-friendly input enforcement

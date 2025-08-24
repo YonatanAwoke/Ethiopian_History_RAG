@@ -38,6 +38,27 @@ The directory structure is as follows:
 ├── README.md                                 # This documentation
 ```
 
+
+## System Scope and Limitations
+
+**Coverage:**
+- The assistant covers Ethiopian history from prehistory (e.g., Lucy/Australopithecus) through the 20th century, including major events, figures, empires, and cultural developments.
+- Sources include English and Amharic Wikipedia articles, curated for educational use.
+- Focus is on factual, well-documented history suitable for students and the general public.
+
+**Limitations:**
+- The system does not cover modern political events after the 20th century, current news, or non-historical folklore.
+- It does not provide legal, medical, or political advice.
+- Some topics may be simplified for clarity and age-appropriateness.
+- Answers are grounded in the available Wikipedia data and may not reflect the latest academic research.
+
+**Excluded Topics:**
+- Modern Ethiopian politics (post-2000)
+- Unverified legends or folklore not covered in Wikipedia
+- Non-historical or speculative content
+
+If you have suggestions for expanding the scope or notice missing topics, please open an issue or contribute!
+
 ## Usage
 
 ### Preparing Your Data

@@ -181,11 +181,52 @@ if st.session_state.nav_page == "nav-home":
         if any(word in user_input.lower() for word in rude_words):
             st.warning("Please ask your question in a kind and kid-friendly way! 😊 Try rephrasing your question politely.")
         else:
+            # --- Input Normalization ---
+            import re
+            stopwords = set([
+                'the', 'is', 'in', 'at', 'of', 'a', 'an', 'and', 'to', 'for', 'on', 'with', 'as', 'by', 'from', 'about', 'that', 'this', 'it', 'be', 'or', 'are', 'was', 'were', 'which', 'who', 'whom', 'whose', 'has', 'have', 'had', 'but', 'not', 'so', 'if', 'then', 'than', 'too', 'very', 'can', 'will', 'just', 'do', 'does', 'did', 'into', 'out', 'up', 'down', 'over', 'under', 'again', 'further', 'once'
+            ])
+            synonyms = {
+                'ethiopia': ['abyssinia'],
+                'king': ['emperor', 'negus'],
+                'queen': ['empress'],
+                'battle': ['war', 'conflict'],
+                'capital': ['addis ababa'],
+                'leader': ['ruler'],
+                'church': ['cathedral'],
+                'ancient': ['old'],
+                'modern': ['recent'],
+            }
+            def normalize_query(q):
+                q = q.lower()
+                q = re.sub(r'[^a-z0-9\s]', '', q)
+                tokens = [w for w in q.split() if w not in stopwords]
+                # Expand synonyms
+                expanded = []
+                for w in tokens:
+                    expanded.append(w)
+                    for k, syns in synonyms.items():
+                        if w == k or w in syns:
+                            expanded.extend([k] + syns)
+                return ' '.join(sorted(set(expanded)))
+            normalized_query = normalize_query(user_input)
+            # --- Query Classification ---
+            def classify_query(q):
+                q = q.lower()
+                if any(x in q for x in ["when", "where", "who", "how many", "date", "year", "time", "list", "name all", "give me", "show me"]):
+                    return "fact"
+                if any(x in q for x in ["why", "explain", "reason", "cause", "meaning", "significance", "describe", "tell me about"]):
+                    return "explanation"
+                if any(x in q for x in ["compare", "difference", "similarity", "versus", "vs", "better", "worse"]):
+                    return "comparison"
+                return "fact"
+            query_type = classify_query(user_input)
             with st.spinner(f"{persona_name} is thinking..."):
-                docs = retrieve_relevant_documents(user_input)
-                # Compose persona-aware system prompt with strict formatting instructions
+                docs = retrieve_relevant_documents(normalized_query)
+                # Compose persona-aware system prompt with strict formatting instructions and query type
                 system_prompt = (
                     f"You are {persona_name}, a historical leader of Ethiopia. {persona_tone} "
+                    f"The user has asked a {query_type} question. "
                     "Answer as if you are this leader, using the provided historical documents.\n"
                     "Strictly follow these formatting rules:\n"
                     "- Use clear, complete sentences and paragraphs.\n"
@@ -210,12 +251,48 @@ if st.session_state.nav_page == "nav-home":
                     answer = f"<div style='font-size:1.2em;'><span style='font-size:2em;'>👑</span> <b>{persona_name}:</b> I couldn't find anything about that in my history books. Try another question! 🦋</div>"
                 st.session_state.chat_history.insert(0, (persona_name, answer))
                 st.session_state.chat_history.insert(0, ("You", user_input))
-    for speaker, msg in st.session_state.chat_history:
+    feedback_given = st.session_state.get('feedback_given', {})
+    for idx, (speaker, msg) in enumerate(st.session_state.chat_history):
         if speaker == "You":
             st.markdown(f"<div style='background:#e0f7fa;padding:0.7em;border-radius:10px;margin-bottom:0.3em; color:black;'><b>🧒 {speaker}:</b> {msg}</div>", unsafe_allow_html=True)
         else:
             st.markdown(f"<div style='background:#fff3e0;padding:0.7em;border-radius:10px;margin-bottom:0.3em;animation:fadein 1s; color:black;'><b>{msg}</b></div>", unsafe_allow_html=True)
+            # Feedback buttons (only for answers, not user input)
+            if idx not in feedback_given:
+                col1, col2 = st.columns([1, 3])
+                with col1:
+                    unclear = st.button("❓ Unclear", key=f"unclear_{idx}")
+                with col2:
+                    unsat = st.button("👎 Not Helpful", key=f"unsat_{idx}")
+                if unclear or unsat:
+                    feedback_given[idx] = True
+                    st.session_state['feedback_given'] = feedback_given
+                    if unclear:
+                        st.info("Thank you for your feedback! We'll work to make answers clearer.")
+                    if unsat:
+                        st.info("Thank you for your feedback! We'll work to improve answer helpfulness.")
+
     st.markdown("---")
+    with st.expander("ℹ️ System Scope, Limitations, and Excluded Topics", expanded=False):
+        st.markdown("""
+**Coverage:**
+- The assistant covers Ethiopian history from prehistory (e.g., Lucy/Australopithecus) through the 20th century, including major events, figures, empires, and cultural developments.
+- Sources include English and Amharic Wikipedia articles, curated for educational use.
+- Focus is on factual, well-documented history suitable for students and the general public.
+
+**Limitations:**
+- The system does not cover modern political events after the 20th century, current news, or non-historical folklore.
+- It does not provide legal, medical, or political advice.
+- Some topics may be simplified for clarity and age-appropriateness.
+- Answers are grounded in the available Wikipedia data and may not reflect the latest academic research.
+
+**Excluded Topics:**
+- Modern Ethiopian politics (post-2000)
+- Unverified legends or folklore not covered in Wikipedia
+- Non-historical or speculative content
+
+<span style='font-size:0.95em;'>If you have suggestions for expanding the scope or notice missing topics, please open an issue or contribute!</span>
+        """, unsafe_allow_html=True)
     st.markdown("Made with ❤️ for curious kids.")
 
 
